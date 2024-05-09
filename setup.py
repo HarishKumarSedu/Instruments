@@ -56,7 +56,7 @@ setuptools.setup(
     include_dirs=['src'],
     install_requires= ['pip-chill','pyvisa','Instruments'],
     data_files=[('src', ['src/.*'])],
-    packages=setuptools.find_packages(include=["src","src.*"], exclude=['env','env.*']),
+    packages=setuptools.find_packages(where='src', exclude=['env','env.*']),
     
     extras_require={
         'math': extra_math,

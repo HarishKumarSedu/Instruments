@@ -31,6 +31,6 @@ setuptools.setup(
         "Bug Tracker": f"https://github.com/{AUTHOR_USER_NAME}/{REPO_NAME}/issues",
     },
     package_dir={"": "."},
-    install_requires= ['pip-chill','pyvisa','https://github.com/HarishKumarSedu/Instruments'],
+    install_requires= ['pip-chill','pyvisa','Instruments'],
     packages=setuptools.find_packages(where=".")
 )

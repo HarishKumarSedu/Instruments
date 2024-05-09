@@ -1,9 +1,16 @@
 Metadata-Version: 2.1
 Name: Instruments
-Version: 0.0.0
-Summary: A small python package for ml app
+Version: 0.0.1
+Summary: A tutorial for creating pip packages.
 Home-page: https://github.com/HarishKumarSedu/Instruments
-Author: HarishKumarSedu
+Author: Michael Kim
 Author-email: harishkumarsedu@gmail.com
-Project-URL: Bug Tracker, https://github.com/HarishKumarSedu/Instruments/issues
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Provides-Extra: math
+Provides-Extra: bin
+Provides-Extra: test
+Provides-Extra: dev
+Provides-Extra: ci
 License-File: LICENSE

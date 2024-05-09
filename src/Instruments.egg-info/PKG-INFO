@@ -6,6 +6,9 @@ Home-page: https://github.com/HarishKumarSedu/Instruments
 Author: HarishKumarSedu
 Author-email: harishkumarsedu@gmail.com
 Project-URL: Bug Tracker, https://github.com/HarishKumarSedu/Instruments/issues
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
 Provides-Extra: math
 Provides-Extra: bin
 Provides-Extra: test
@@ -13,4 +16,4 @@ Provides-Extra: dev
 Provides-Extra: ci
 License-File: LICENSE
 
-# Instruments
+Instruments

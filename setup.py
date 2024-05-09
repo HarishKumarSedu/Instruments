@@ -1,21 +1,4 @@
-import setuptools
-import json
-import os 
-from pathlib import Path 
-
-with open("README.md", "r", encoding="utf-8") as f:
-    long_description = f.read()
-
-with open(Path(os.path.join(os.path.dirname(__file__),'requirements.txt')),'r') as file :
-    include_packages = [file.read() ]
-
-
-__version__ = "0.0.0"
-
-REPO_NAME = "Instruments"
-AUTHOR_USER_NAME = "HarishKumarSedu"
-SRC_REPO = "Instruments"
-AUTHOR_EMAIL = "harishkumarsedu@gmail.com"
+from setuptools import setup, find_packages
 
 
 extra_math = [
@@ -40,24 +23,17 @@ extra_ci = [
     'python-coveralls',
 ]
 
-setuptools.setup(
-    name="Instruments",
-    version=__version__,
-    author=AUTHOR_USER_NAME,
-    author_email=AUTHOR_EMAIL,
-    description="A small python package for ml app",
-    long_description='Instruments',
-    long_description_content="text/markdown",
-    url=f"https://github.com/{AUTHOR_USER_NAME}/{REPO_NAME}",
-    project_urls={
-        "Bug Tracker": f"https://github.com/{AUTHOR_USER_NAME}/{REPO_NAME}/issues",
-    },
-    package_dir={"": "./src"},
-    include_dirs=['src'],
-    install_requires= ['pip-chill','pyvisa','Instruments'],
-    data_files=[('src', ['src/.*'])],
-    packages=setuptools.find_packages(where='src'),
-    
+setup(
+    name='Instruments',
+    version='0.0.1',
+    description='A tutorial for creating pip packages.',
+
+    url='https://github.com/HarishKumarSedu/Instruments',
+    author='Michael Kim',
+    author_email='harishkumarsedu@gmail.com',
+
+    packages=find_packages(where='src'),
+
     extras_require={
         'math': extra_math,
 
@@ -68,16 +44,17 @@ setuptools.setup(
 
         'ci': extra_ci,
     },
-        entry_points={
+
+    entry_points={
         'console_scripts': [
             'add=src',
         ],
     },
+
     classifiers=[
         'Intended Audience :: Developers',
 
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
     ],
-
 )

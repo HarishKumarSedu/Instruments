@@ -1,0 +1,13 @@
+LICENSE
+README.md
+setup.py
+./src/Instruments.egg-info/PKG-INFO
+./src/Instruments.egg-info/SOURCES.txt
+./src/Instruments.egg-info/dependency_links.txt
+./src/Instruments.egg-info/requires.txt
+./src/Instruments.egg-info/top_level.txt
+src/Instruments.egg-info/PKG-INFO
+src/Instruments.egg-info/SOURCES.txt
+src/Instruments.egg-info/dependency_links.txt
+src/Instruments.egg-info/requires.txt
+src/Instruments.egg-info/top_level.txt

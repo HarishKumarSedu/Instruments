@@ -32,5 +32,5 @@ setuptools.setup(
     },
     package_dir={"": "."},
     install_requires= ['pip-chill','pyvisa','Instruments'],
-    packages=setuptools.find_packages(where=".")
+    packages=setuptools.find_packages(where=".*")
 )

@@ -45,11 +45,6 @@ setup(
         'ci': extra_ci,
     },
 
-    entry_points={
-        'console_scripts': [
-            'add=src',
-        ],
-    },
 
     classifiers=[
         'Intended Audience :: Developers',

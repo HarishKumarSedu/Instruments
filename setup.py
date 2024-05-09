@@ -1,9 +1,22 @@
 import setuptools
+import json
+import os 
+from pathlib import Path 
 
 with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
+with open(Path(os.path.join(os.path.dirname(__file__),'requirements.txt')),'r') as file :
+    include_packages = [file.read() ]
 
+# with open(Path(os.path.join(os.path.dirname(__file__),'requirements.json')),'r') as file :
+#     pacakges = json.load(file)
+#     print(pacakges)
+#     install_requires = []
+#     for pacakge in pacakges:
+#         install_requires.append(pacakge.get('name'))
+    
+# print(inlude_packages)
 __version__ = "0.0.0"
 
 REPO_NAME = "Instruments"
@@ -25,5 +38,6 @@ setuptools.setup(
         "Bug Tracker": f"https://github.com/{AUTHOR_USER_NAME}/{REPO_NAME}/issues",
     },
     package_dir={"": "."},
+    install_requires= ['py-cill','pyvisa'],
     packages=setuptools.find_packages(where=".")
 )

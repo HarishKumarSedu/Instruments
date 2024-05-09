@@ -45,7 +45,7 @@ setup(
         'ci': extra_ci,
     },
 
-    py_modules=['src']
+    py_modules=['src'],
     classifiers=[
         'Intended Audience :: Developers',
 

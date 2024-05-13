@@ -1,41 +1,27 @@
-import setuptools
-import json
-import os 
-from pathlib import Path 
+from setuptools import find_packages, setup
 
-with open("README.md", "r", encoding="utf-8") as f:
+with open("README.md", "r") as f:
     long_description = f.read()
 
-with open(Path(os.path.join(os.path.dirname(__file__),'requirements.txt')),'r') as file :
-    include_packages = [file.read() ]
-
-
-__version__ = "0.0.0"
-
-REPO_NAME = "Instruments"
-AUTHOR_USER_NAME = "HarishKumarSedu"
-SRC_REPO = "Instruments"
-AUTHOR_EMAIL = "harishkumarsedu@gmail.com"
-
-setuptools.setup(
+setup(
     name="Instruments",
-    version=__version__,
-    author=AUTHOR_USER_NAME,
-    author_email=AUTHOR_EMAIL,
-    description="A small python package for ml app",
-    long_description='Instruments',
-    long_description_content="text/markdown",
-    url=f"https://github.com/{AUTHOR_USER_NAME}/{REPO_NAME}",
-    project_urls={
-        "Bug Tracker": f"https://github.com/{AUTHOR_USER_NAME}/{REPO_NAME}/issues",
-    },
-    install_requires= ['pip-chill','pyvisa','Instruments'],
-    packages=setuptools.find_packages(where='src'),
+    version="0.0.10",
+    description="",
+    packages=find_packages(where="src"),
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/HarishKumarSedu/Instruments",
+    author="harishkumarsedu@gmail.com",
+    author_email="harishkumarsedu@gmail.com",
+    license="MIT",
     classifiers=[
-        'Intended Audience :: Developers',
-
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3.10",
+        "Operating System :: OS Independent",
     ],
-
+    install_requires=["pyvisa"],
+    extras_require={
+        "dev": ["pytest>=7.0", "twine>=4.0.2"],
+    },
+    python_requires=">=3.10",
 )

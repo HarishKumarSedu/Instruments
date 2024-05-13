@@ -1,5 +1,4 @@
 name: Publish Python 🐍 distributions 
-
 on:
   release:
     types: [created]

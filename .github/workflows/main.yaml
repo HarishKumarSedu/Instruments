@@ -18,6 +18,7 @@ jobs:
 
   Build-Distribution-and-Publish:
     runs-on: ubuntu-20.04
+    needs: [Setup]
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
@@ -32,7 +33,7 @@ jobs:
         twine upload dist/*
         
   Verify-Deployment:
-    needs : [Setup,Build-Distribution-and-Publish]
+    needs : [Build-Distribution-and-Publish]
     runs-on: ubuntu-20.04
     steps:
       - name: Install pypi Package IvmInstruments

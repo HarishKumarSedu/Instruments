@@ -1,11 +1,11 @@
-name: Upload Python Package
+name: Build Package and Deploy 
 
 on:
   push:
     branches: [main]
 
 jobs:
-  deploy:
+  Setup:
     runs-on: ubuntu-20.04
 
     steps:
@@ -14,7 +14,14 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install setuptools wheel twine
+        pip install -r requirments.txt
+
+  Build-Distribution-and-Publish:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+
     - name: Build and publish
       env:
         TWINE_USERNAME: __token__
@@ -24,6 +31,10 @@ jobs:
         twine  check dist/*
         twine upload dist/*
         
-    - name: Install pypi Package IvmInstruments
-      run: |
-        pip install -U IvmInstruments
+  Verify-Deployment:
+    needs : [Setup,Build-Distribution-and-Publish]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Install pypi Package IvmInstruments
+        run: |
+          pip install -U IvmInstruments

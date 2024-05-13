@@ -4,7 +4,7 @@ with open('./README.md', 'r') as file :
 
 setup(
     name='IvmInstruments',
-    version='0.1.10',
+    version='0.1.11',
     long_description=long_description,
     long_description_content_type='markdown/text',
     py_modules=['Instruments'],

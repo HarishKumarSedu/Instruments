@@ -11,7 +11,7 @@ setup(
     author_email=AUTHOR_EMAIL,
     version='0.2.5',
     py_modules=['Instruments'],
-    description=[ 'text/x-rst','text/markdown'],
+    description=[ 'text/markdown','text/x-rst',],
     url=f"https://github.com/{AUTHOR_USER_NAME}/{REPO_NAME}",
     project_urls={
         "Bug Tracker": f"https://github.com/{AUTHOR_USER_NAME}/{REPO_NAME}/issues",

@@ -1,5 +1,7 @@
 Metadata-Version: 2.1
 Name: IvmInstruments
-Version: 0.2.0
-Summary: ['text/x-rst', 'text/plain', 'text/markdown']
+Version: 0.2.2
+Summary: ['text/x-rst', 'text/markdown']
 License-File: LICENSE
+
+#IvmInstruments

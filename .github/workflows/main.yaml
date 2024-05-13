@@ -47,4 +47,4 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PY_PI_TOKEN }}
-        repository-url: https://test.pypi.org/legacy/
+        repository-url: https://pypi.org/project/IvmInstruments

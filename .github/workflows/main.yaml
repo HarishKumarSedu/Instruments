@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     
 jobs:
-  Setup:
+  Setup-and-Deploy:
     runs-on: ubuntu-20.04
 
     steps:
@@ -17,7 +17,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install twine
-        
+
     - name: Build and publish
       env:
         TWINE_USERNAME: __token__
@@ -29,7 +29,7 @@ jobs:
         python -m twine upload dist/*
         
   Verify-Deployment:
-    needs : [Build-Distribution-and-Publish]
+    needs : [Setup]
     runs-on: ubuntu-20.04
     steps:
       - name: Install pypi Package IvmInstruments

@@ -9,7 +9,7 @@ setup(
     name=f'Ivm{REPO_NAME}',
     author=AUTHOR_USER_NAME,
     author_email=AUTHOR_EMAIL,
-    version='0.2.7',
+    version='0.2.8',
     py_modules=['Instruments'],
     description=[ 'text/markdown','text/x-rst',],
     url=f"https://github.com/{AUTHOR_USER_NAME}/{REPO_NAME}",

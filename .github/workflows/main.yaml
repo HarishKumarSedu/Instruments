@@ -29,9 +29,10 @@ jobs:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PY_PI_TOKEN }}
       run: |
+        pip list 
         python setup.py sdist bdist_wheel
-        twine  check dist/*
-        twine upload dist/*
+        python -m twine  check dist/*
+        python -m twine upload dist/*
         
   Verify-Deployment:
     needs : [Build-Distribution-and-Publish]

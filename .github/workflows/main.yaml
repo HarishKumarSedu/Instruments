@@ -29,7 +29,7 @@ jobs:
         python -m twine upload dist/*
         
   Verify-Deployment:
-    needs : [Setup]
+    needs : [Setup-and-Deploy]
     runs-on: ubuntu-20.04
     steps:
       - name: Install pypi Package IvmInstruments

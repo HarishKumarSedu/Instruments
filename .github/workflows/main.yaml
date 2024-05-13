@@ -1,7 +1,10 @@
 
 name: Publish Python 🐍 IVM Instruments distribution 📦 to PyPI 
-on: push
-
+on: 
+  push: 
+    branches: [main]
+  workflow_dispatch:
+    
 jobs:
   build:
     name: Build distribution 📦

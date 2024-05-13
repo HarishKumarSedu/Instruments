@@ -23,3 +23,7 @@ jobs:
         python setup.py sdist bdist_wheel
         twine  check dist/*
         twine upload dist/*
+        
+    - name: Install pypi Package IvmInstruments
+      run: |
+        pip install -U IvmInstruments

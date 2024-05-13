@@ -17,29 +17,6 @@ AUTHOR_USER_NAME = "HarishKumarSedu"
 SRC_REPO = "Instruments"
 AUTHOR_EMAIL = "harishkumarsedu@gmail.com"
 
-
-extra_math = [
-    'returns-decorator',
-]
-
-extra_bin = [
-    *extra_math,
-]
-
-extra_test = [
-    *extra_math,
-    'pytest>=4',
-    'pytest-cov>=2',
-]
-extra_dev = [
-    *extra_test,
-]
-
-extra_ci = [
-    *extra_test,
-    'python-coveralls',
-]
-
 setuptools.setup(
     name="Instruments",
     version=__version__,
@@ -57,22 +34,6 @@ setuptools.setup(
     install_requires= ['pip-chill','pyvisa','Instruments'],
     data_files=[('src', ['src/.*'])],
     packages=setuptools.find_packages(where='src'),
-    
-    extras_require={
-        'math': extra_math,
-
-        'bin': extra_bin,
-
-        'test': extra_test,
-        'dev': extra_dev,
-
-        'ci': extra_ci,
-    },
-        entry_points={
-        'console_scripts': [
-            'add=src',
-        ],
-    },
     classifiers=[
         'Intended Audience :: Developers',
 

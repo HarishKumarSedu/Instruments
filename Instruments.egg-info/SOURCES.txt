@@ -4,6 +4,5 @@ setup.py
 Instruments.egg-info/PKG-INFO
 Instruments.egg-info/SOURCES.txt
 Instruments.egg-info/dependency_links.txt
-Instruments.egg-info/entry_points.txt
 Instruments.egg-info/requires.txt
 Instruments.egg-info/top_level.txt

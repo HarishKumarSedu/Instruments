@@ -3,14 +3,10 @@ Name: Instruments
 Version: 0.0.1
 Summary: A tutorial for creating pip packages.
 Home-page: https://github.com/HarishKumarSedu/Instruments
-Author: Michael Kim
+Author: HarishKumarSedu
 Author-email: harishkumarsedu@gmail.com
 Classifier: Intended Audience :: Developers
 Classifier: Programming Language :: Python
 Classifier: Programming Language :: Python :: 3
-Provides-Extra: math
-Provides-Extra: bin
-Provides-Extra: test
-Provides-Extra: dev
-Provides-Extra: ci
+Requires-Python: >=3.10
 License-File: LICENSE

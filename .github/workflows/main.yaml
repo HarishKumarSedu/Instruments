@@ -1,4 +1,4 @@
-name: Publish Python 🐍 distributions 
+name: Publish Python 🐍 distributions to PyPI
 on:
   release:
     types: [created]

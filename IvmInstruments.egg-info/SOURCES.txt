@@ -1,5 +1,4 @@
 LICENSE
-README.md
 setup.py
 Instruments/DigitalScope.py
 Instruments/KeySight_N670x.py

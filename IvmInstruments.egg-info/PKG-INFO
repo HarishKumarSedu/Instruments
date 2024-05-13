@@ -1,0 +1,17 @@
+Metadata-Version: 2.1
+Name: IvmInstruments
+Version: 0.0.10
+Summary: Instruments Package
+Home-page: https://github.com/HarishKumarSedu/Instruments
+Author: harishkumarsedu@gmail.com
+Author-email: harishkumarsedu@gmail.com
+License: MIT
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Operating System :: Microsoft :: Windows
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Provides-Extra: dev
+License-File: LICENSE
+
+# Instruments

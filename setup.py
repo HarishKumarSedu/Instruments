@@ -6,7 +6,7 @@ setup(
     name='IvmInstruments',
     version='0.1.7',
     long_description=long_description,
-    long_description_content_type='markdown/text'
+    long_description_content_type='markdown/text',
     py_modules=['Instruments'],
     packages=find_packages(),
     include_dirs=['Instruments'],

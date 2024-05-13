@@ -29,10 +29,7 @@ setuptools.setup(
     project_urls={
         "Bug Tracker": f"https://github.com/{AUTHOR_USER_NAME}/{REPO_NAME}/issues",
     },
-    package_dir={"": "./src"},
-    include_dirs=['src'],
     install_requires= ['pip-chill','pyvisa','Instruments'],
-    data_files=[('src', ['src/.*'])],
     packages=setuptools.find_packages(where='src'),
     classifiers=[
         'Intended Audience :: Developers',

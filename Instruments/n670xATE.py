@@ -293,7 +293,7 @@ class N670xATE:
 
 def main():
     # Initialize instrument control class (make sure you have N670x class defined and imported)
-    from KeySight_N670x import N670x
+    from Instruments.n670x import N670x
     psu = N670x('USB0::0x2A8D::0x0F02::MY56002702::INSTR')
     ate = N670xATE(psu)
 

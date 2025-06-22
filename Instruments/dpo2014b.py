@@ -3,7 +3,7 @@ import pyvisa
 import numpy as np
 from scipy import signal
 
-class TektronixDPO2014B:
+class DPO2014B:
     """
     Tektronix DPO2014B Digital Oscilloscope SCPI Control Class.
 

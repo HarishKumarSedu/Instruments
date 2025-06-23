@@ -1,4 +1,6 @@
 from .dpo2014b import DPO2014B
+from .dpo4054 import DPO4054
+from .mdo4034c import MDO4034C
 from .a34461 import A34461
 from .a34461ATE import A34461ATE
 from .e362x import E362X

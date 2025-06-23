@@ -1,7 +1,15 @@
 Metadata-Version: 2.1
 Name: IvmInstruments
-Version: 0.2.2
-Summary: ['text/x-rst', 'text/markdown']
+Version: 0.2.9
+Summary: A short description of the Instruments package
+Home-page: https://github.com/HarishKumarSedu/Instruments
+Author: HarishKumarSedu
+Author-email: harishkumarsedu@gmail.com
+Project-URL: Bug Tracker, https://github.com/HarishKumarSedu/Instruments/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
 License-File: LICENSE
 
 #IvmInstruments

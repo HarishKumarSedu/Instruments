@@ -1,13 +1,12 @@
 import time
 import pyvisa
 import numpy as np
-from scipy import signal
 import csv
 import json
 
 class DPO4054:
     """
-    Tektronix DPO4054 Oscilloscope SCPI Control Class.
+    Tektronix DPO4054 Oscilloscope SCPI Control Class (per Programmer Manual 077-0248-01).
     """
 
     def __init__(self, resource_name):
@@ -17,7 +16,7 @@ class DPO4054:
         self.inst.read_termination = '\n'
         self.inst.write_termination = '\n'
 
-    # 1. Basic Instrument Control
+    # Basic Instrument Control
 
     def identify(self):
         return self.inst.query("*IDN?").strip()
@@ -33,162 +32,130 @@ class DPO4054:
         return self.inst.query("*TST?").strip()
 
     def get_error(self):
-        return self.inst.query("SYST:ERR?").strip()
+        return self.inst.query("ALLEV?").strip()
 
-    # 2. Channel Configuration
+    # Channel (Vertical) Control
 
     def set_channel_display(self, channel:int, state:bool):
         val = 'ON' if state else 'OFF'
-        self.inst.write(f"DISP:WAVF:CH{channel} {val}")
-
-    def get_channel_display(self, channel:int):
-        return self.inst.query(f"DISP:WAVF:CH{channel}?").strip()
+        self.inst.write(f"SELect:CH{channel} {val}")
 
     def set_channel_scale(self, channel:int, volts_per_div:float):
-        self.inst.write(f"CH{channel}:SCALE {volts_per_div}")
+        self.inst.write(f"CH{channel}:SCAle {volts_per_div}")
 
     def get_channel_scale(self, channel:int):
-        return float(self.inst.query(f"CH{channel}:SCALE?"))
+        return float(self.inst.query(f"CH{channel}:SCAle?"))
 
-    def set_channel_position(self, channel:int, position_volts:float):
-        self.inst.write(f"CH{channel}:POSITION {position_volts}")
+    def set_channel_position(self, channel:int, position:float):
+        self.inst.write(f"CH{channel}:POSition {position}")
 
     def get_channel_position(self, channel:int):
-        return float(self.inst.query(f"CH{channel}:POSITION?"))
+        return float(self.inst.query(f"CH{channel}:POSition?"))
 
     def set_channel_coupling(self, channel:int, coupling:str):
         coupling = coupling.upper()
         if coupling not in ['DC', 'AC', 'GND']:
             raise ValueError("Coupling must be 'DC', 'AC', or 'GND'")
-        self.inst.write(f"CH{channel}:COUPLING {coupling}")
+        self.inst.write(f"CH{channel}:COUPling {coupling}")
 
     def get_channel_coupling(self, channel:int):
-        return self.inst.query(f"CH{channel}:COUPLING?").strip()
+        return self.inst.query(f"CH{channel}:COUPling?").strip()
 
     def set_channel_bandwidth_limit(self, channel:int, enable:bool):
-        val = 'TWENTY' if enable else 'FULL'
-        self.inst.write(f"CH{channel}:BANDWIDTH {val}")
+        val = 'ON' if enable else 'OFF'
+        self.inst.write(f"CH{channel}:BWL {val}")
 
     def get_channel_bandwidth_limit(self, channel:int):
-        return self.inst.query(f"CH{channel}:BANDWIDTH?").strip()
+        return self.inst.query(f"CH{channel}:BWL?").strip()
 
-    def set_channel(self, channel, display=True, scale=1.0, position=0.0, coupling='DC'):
-        self.set_channel_display(channel, display)
-        self.set_channel_scale(channel, scale)
-        self.set_channel_position(channel, position)
-        self.set_channel_coupling(channel, coupling)
-
-    # 3. Timebase Configuration
+    # Horizontal (Timebase) Control
 
     def set_timebase_scale(self, seconds_per_div:float):
-        self.inst.write(f"HOR:MAIN:SCALE {seconds_per_div}")
+        self.inst.write(f"HORizontal:MAIn:SCAle {seconds_per_div}")
 
     def get_timebase_scale(self):
-        return float(self.inst.query("HOR:MAIN:SCALE?"))
+        return float(self.inst.query("HORizontal:MAIn:SCAle?"))
 
     def set_timebase_position(self, seconds:float):
-        self.inst.write(f"HOR:MAIN:POSITION {seconds}")
+        self.inst.write(f"HORizontal:MAIn:POSition {seconds}")
 
     def get_timebase_position(self):
-        return float(self.inst.query("HOR:MAIN:POSITION?"))
+        return float(self.inst.query("HORizontal:MAIn:POSition?"))
 
-    def set_timebase_reference(self, reference:str):
-        reference = reference.upper()
-        if reference not in ['LEFT', 'CENTER', 'RIGHT']:
-            raise ValueError("Reference must be 'LEFT', 'CENTER', or 'RIGHT'")
-        self.inst.write(f"HOR:MAIN:REF {reference}")
-
-    def get_timebase_reference(self):
-        return self.inst.query("HOR:MAIN:REF?").strip()
-
-    # 4. Trigger Setup and Monitor
+    # Trigger Control
 
     def set_trigger_mode(self, mode:str):
         mode = mode.upper()
-        valid_modes = ['EDGE', 'PULSE', 'VIDEO', 'SLOPE', 'RUNT', 'WINDOW', 'GLITCH', 'TV', 'PATTERN', 'STATE']
+        valid_modes = ['EDGE', 'GLITch', 'WIDth', 'RUNT', 'WINDOW', 'TIMEOUT', 'TRANSITION', 'TV', 'PATTERN', 'STATE', 'SETUPHOLD']
         if mode not in valid_modes:
             raise ValueError(f"Invalid trigger mode. Valid options: {valid_modes}")
-        self.inst.write(f"TRIG:MODE {mode}")
+        self.inst.write(f"TRIGger:A:TYPe {mode}")
 
     def get_trigger_mode(self):
-        return self.inst.query("TRIG:MODE?").strip()
+        return self.inst.query("TRIGger:A:TYPe?").strip()
 
     def set_trigger_edge_source(self, channel:int):
-        self.inst.write(f"TRIG:EDGE:SOURCE CH{channel}")
+        self.inst.write(f"TRIGger:A:EDGE:SOUrce CH{channel}")
 
     def get_trigger_edge_source(self):
-        return self.inst.query("TRIG:EDGE:SOURCE?").strip()
+        return self.inst.query("TRIGger:A:EDGE:SOUrce?").strip()
 
     def set_trigger_edge_slope(self, slope:str):
         slope = slope.upper()
-        if slope not in ['RISE', 'FALL', 'EITHER']:
-            raise ValueError("Slope must be 'RISE', 'FALL', or 'EITHER'")
-        self.inst.write(f"TRIG:EDGE:SLOPE {slope}")
+        if slope not in ['RIS', 'FALL', 'EITH']:
+            raise ValueError("Slope must be 'RIS', 'FALL', or 'EITH'")
+        self.inst.write(f"TRIGger:A:EDGE:SLOpe {slope}")
 
     def get_trigger_edge_slope(self):
-        return self.inst.query("TRIG:EDGE:SLOPE?").strip()
+        return self.inst.query("TRIGger:A:EDGE:SLOpe?").strip()
 
     def set_trigger_level(self, channel:int, level_volts:float):
-        self.inst.write(f"TRIG:EDGE:LEVEL CH{channel},{level_volts}")
+        self.inst.write(f"TRIGger:A:LEVel:CH{channel} {level_volts}")
 
     def get_trigger_level(self, channel:int):
-        return float(self.inst.query(f"TRIG:EDGE:LEVEL? CH{channel}"))
+        return float(self.inst.query(f"TRIGger:A:LEVel:CH{channel}?"))
 
     def get_trigger_status(self):
-        return self.inst.query("TRIG:STATE?").strip()
+        return self.inst.query("TRIGger:STATE?").strip()
 
-    def is_triggered(self):
-        status = self.get_trigger_status()
-        return status in ['TRIGGER', 'ARMED', 'STOP']
+    # Acquisition Control
 
-    # 5. Measurement Functions
+    def run_acquisition(self):
+        self.inst.write("ACQuire:STATE RUN")
 
-    def enable_measurement(self, meas_num:int, meas_type:str, channel:int):
-        self.inst.write(f"MEASU:MEAS{meas_num}:TYPE {meas_type}")
-        self.inst.write(f"MEASU:MEAS{meas_num}:SOURCE1 CH{channel}")
-        self.inst.write(f"MEASU:MEAS{meas_num}:STATE ON")
+    def stop_acquisition(self):
+        self.inst.write("ACQuire:STATE STOP")
 
-    def disable_measurement(self, meas_num:int):
-        self.inst.write(f"MEASU:MEAS{meas_num}:STATE OFF")
+    # Measurement
 
-    def query_measurement(self, meas_num:int):
-        return float(self.inst.query(f"MEASU:MEAS{meas_num}:VALUE?"))
+    def add_measurement(self, meas_type:str, source:str):
+        self.inst.write(f"MEASUrement:ADDMeas {meas_type},{source}")
 
-    # 6. Math Functions
+    def clear_measurements(self):
+        self.inst.write("MEASUrement:CLEar")
 
-    def enable_math_function(self, func:str):
-        func = func.upper()
-        valid_funcs = ['ADD', 'SUB', 'MULT', 'DIV', 'FFT', 'INV', 'SQRT', 'LOG', 'EXP', 'ABS']
-        if func not in valid_funcs:
-            raise ValueError(f"Invalid math function. Valid options: {valid_funcs}")
+    def get_measurement_value(self, meas_num:int):
+        return float(self.inst.query(f"MEASUrement:MEAS{meas_num}:VALue?"))
+
+    # Math
+
+    def enable_math(self, func:str):
         self.inst.write(f"MATH:DEFINE {func}")
         self.inst.write("MATH:STATE ON")
 
     def disable_math(self):
         self.inst.write("MATH:STATE OFF")
 
-    def set_math_source(self, source1:str, source2:str=None):
-        self.inst.write(f"MATH:SOU1 {source1}")
-        if source2:
-            self.inst.write(f"MATH:SOU2 {source2}")
-
-    # 7. Waveform Acquisition and Data Retrieval
-
-    def run_acquisition(self):
-        self.inst.write("ACQ:STATE ON")
-
-    def stop_acquisition(self):
-        self.inst.write("ACQ:STATE OFF")
+    # Waveform Data Transfer
 
     def fetch_waveform_raw(self, channel:int):
-        self.inst.write(f"DATA:SOURCE CH{channel}")
+        self.inst.write(f"DATA:SOUrce CH{channel}")
         self.inst.write("DATA:WIDTH 1")
-        self.inst.write("DATA:ENC RPB")
-        raw_data = self.inst.query_binary_values("CURVE?", datatype='b', container=list)
-        return raw_data
+        self.inst.write("DATA:ENCdg RPB")
+        return self.inst.query_binary_values("CURVe?", datatype='b', container=list)
 
     def fetch_waveform(self, channel:int):
-        self.inst.write(f"DATA:SOURCE CH{channel}")
+        self.inst.write(f"DATA:SOUrce CH{channel}")
         preamble = self.inst.query("WFMPRE?").strip().split(';')
         x_increment = float(self._get_preamble_value(preamble, 'XINCR'))
         x_origin = float(self._get_preamble_value(preamble, 'XZERO'))
@@ -207,7 +174,7 @@ class DPO4054:
                 return item.split(' ')[1]
         raise ValueError(f"Preamble key {key} not found")
 
-    # 8. Screen Image Capture
+    # Screen Capture
 
     def capture_screen_image(self, filename:str = "screen_capture.png", image_format:str = "PNG"):
         image_format = image_format.upper()
@@ -215,15 +182,15 @@ class DPO4054:
         if image_format not in valid_formats:
             raise ValueError(f"Invalid image format. Valid options: {valid_formats}")
 
-        self.inst.write(f"HARDcopy:FORMat {image_format}")
-        self.inst.write("HARDcopy START")
+        self.inst.write(f"HARDCopy:FORMat {image_format}")
+        self.inst.write("HARDCopy STARt")
         time.sleep(2)
-        img_data = self.inst.query_binary_values("MMEM:DATA? 'C:\\screen_capture.png'", datatype='B', container=bytearray)
+        img_data = self.inst.query_binary_values("MMEMory:DATA? 'C:\\screen_capture.png'", datatype='B', container=bytearray)
         with open(filename, 'wb') as f:
             f.write(img_data)
         print(f"Screen image saved to {filename}")
 
-    # 9. Data Export Helpers
+    # Data Export
 
     def export_waveform_to_csv(self, times, voltages, filename="waveform.csv"):
         with open(filename, 'w', newline='') as csvfile:
@@ -239,58 +206,7 @@ class DPO4054:
             json.dump(data, jsonfile, indent=4)
         print(f"Waveform data exported to {filename}")
 
-    # 10. Application-Level Examples
-
-    def basic_capture_and_export(self, channel=1, csv_file="waveform.csv"):
-        self.run_acquisition()
-        time.sleep(1)
-        self.stop_acquisition()
-        times, volts = self.fetch_waveform(channel)
-        self.export_waveform_to_csv(times, volts, csv_file)
-        return times, volts
-
-    def fft_analysis(self, channel=1):
-        times, volts = self.fetch_waveform(channel)
-        fs = 1 / (times[1] - times[0])
-        f, Pxx = signal.welch(volts, fs)
-        return f, Pxx
-
-    # 11. Initialization and Utility Functions
-
-    def initialize(self):
-        self.reset()
-        time.sleep(2)
-        self.clear_status()
-        for ch in range(1, 5):
-            self.set_channel_display(ch, False)
-        self.set_channel_display(1, True)
-        self.set_channel_scale(1, 1.0)
-        self.set_channel_position(1, 0.0)
-        self.set_channel_coupling(1, 'DC')
-        self.set_timebase_scale(1e-3)
-        self.set_timebase_position(0.0)
-        self.set_trigger_mode('EDGE')
-        self.set_trigger_edge_source(1)
-        self.set_trigger_edge_slope('RISE')
-        self.set_trigger_level(1, 0.0)
-
-    def wait_for_trigger(self, timeout_sec=10, sleep_interval=0.1):
-        start_time = time.time()
-        while time.time() - start_time < timeout_sec:
-            if self.is_triggered():
-                return True
-            time.sleep(sleep_interval)
-        return False
-
-    def capture_waveform_on_trigger(self, channel:int=1, timeout_sec=10):
-        self.run_acquisition()
-        triggered = self.wait_for_trigger(timeout_sec)
-        self.stop_acquisition()
-        if triggered:
-            return self.fetch_waveform(channel)
-        else:
-            print("Trigger timeout expired.")
-            return None
+    # Utility
 
     def close(self):
         self.inst.close()

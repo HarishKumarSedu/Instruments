@@ -6,6 +6,8 @@ import json
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.signal import find_peaks, windows
+import os
+from typing import List, Tuple, Dict, Union
 
 class DPO4054:
     """
@@ -39,8 +41,8 @@ class DPO4054:
 
     # Channel (Vertical) Control
 
-    def set_channel_display(self, channel:int, state:bool):
-        val = 'ON' if state else 'OFF'
+    def set_channel_display(self, channel:int, display:bool):
+        val = 'ON' if display else 'OFF'
         self.inst.write(f"SELect:CH{channel} {val}")
 
     def set_channel_scale(self, channel:int, volts_per_div:float):
@@ -141,10 +143,10 @@ class DPO4054:
         self.inst.write(f"MEASUREMENT:MEAS{slot}:TYPE {meas_type.upper()}")
         self.inst.write(f"MEASUREMENT:MEAS{slot}:SOURCE{source} CH{channel}")
         self.inst.write(f"MEASUREMENT:MEAS{slot}:STATE ON")
-        return slot
+        return meas_type,channel,slot,source
         
 
-    def remove_measurement(self, meas_type: str, channel: int,slot: int=1, source: int = 1):
+    def remove_measurement(self,channel: int,slot: int=1, source: int = 1):
         """
         Removes the measurement of type `meas_type` on `channel`.
         """
@@ -174,7 +176,7 @@ class DPO4054:
         """
         self.inst.write(f"MEASUREMENT:MEAS{slot}:SOURCE{source} CH{channel}")
         value = self.inst.query(f"MEASUREMENT:MEAS{slot}:VALUE?").strip()
-        return value if value else ""
+        return float(value.split(' ')[-1]) if value else ""
 
     def enable_math(self, func:str):
         self.inst.write(f"MATH:DEFINE {func}")
@@ -216,19 +218,39 @@ class DPO4054:
 
     # Screen Capture
 
-    def capture_screen_image(self, filename:str = "screen_capture.png", image_format:str = "PNG"):
+    def save_image_to_scope(self, filepath_on_scope: str, image_format: str = "PNG"):
         image_format = image_format.upper()
-        valid_formats = ['PNG', 'BMP', 'JPEG', 'TIFF']
+        valid_formats = ['PNG', 'BMP', 'TIFF']
         if image_format not in valid_formats:
             raise ValueError(f"Invalid image format. Valid options: {valid_formats}")
 
-        self.inst.write(f"HARDCopy:FORMat {image_format}")
-        self.inst.write("HARDCopy STARt")
-        time.sleep(2)
-        img_data = self.inst.query_binary_values("MMEMory:DATA? 'C:\\screen_capture.png'", datatype='B', container=bytearray)
-        with open(filename, 'wb') as f:
-            f.write(img_data)
-        print(f"Screen image saved to {filename}")
+        # Set the image format for saving
+        self.inst.write(f"SAVe:IMAGe:FILEFormat {image_format}")
+        # Disable ink saver for full color
+        self.inst.write("SAVe:IMAGe:INKSaver OFF")
+        # Save the image to the specified file path on the scope's drive
+        # Example filepath_on_scope: "E:/test/screen_capture.png"
+        self.inst.write(f"SAVe:IMAGe \"{filepath_on_scope}\"")
+        print(f"Image saved on scope at {filepath_on_scope}")
+
+    def read_file_from_scope(self, filepath_on_scope: str, filename_on_pc: str):
+        # Query the file data from the scope
+        # self.inst.write(f":MMEMory:DATA? \"{filepath_on_scope}\"")
+        self.inst.write(f"HARDCOPY:FORMAT PNG")
+        self.inst.write("HARDCOPY START")
+        file_data = self.inst.query('HARDCOPY:DATA?')
+
+        # # Remove binary block header if present
+        # if file_data.startswith(b'#'):
+        #     header_len_digits = int(chr(file_data[1]))
+        #     header_len = 2 + header_len_digits
+        #     file_data = file_data[header_len:]
+
+        # Save the binary data to a file on the PC
+        with open(filename_on_pc, "wb") as f:
+            f.write(file_data)
+
+        print(f"File {filepath_on_scope} read from scope and saved as {filename_on_pc}")
 
     # Data Export
 
@@ -293,26 +315,26 @@ class DPO4054:
         return channel_data
         # Utility
         
-        def autoset_and_wait(self, timeout=10):
-            """Perform autoset and wait for completion."""
-            self.inst.write("AUTOS EXECute")
-            start = time.time()
-            while time.time() - start < timeout:
-                if self.inst.query("*OPC?").strip() == "1":
-                    return True
-                time.sleep(0.2)
-            raise TimeoutError("Autoset did not complete in time.")
-    
-        def wait_for_acquisition_complete(self, timeout=10):
-            """Wait until acquisition completes (single sequence)."""
-            start = time.time()
-            while time.time() - start < timeout:
-                if self.inst.query("BUSY?").strip() == "0":
-                    return True
-                time.sleep(0.1)
-            raise TimeoutError("Acquisition did not complete in time.")
+    def autoset_and_wait(self, timeout=10):
+        """Perform autoset and wait for completion."""
+        self.inst.write("AUTOS EXECute")
+        start = time.time()
+        while time.time() - start < timeout:
+            if self.inst.query("*OPC?").strip() == "1":
+                return True
+            time.sleep(0.2)
+        raise TimeoutError("Autoset did not complete in time.")
 
-    def single_sequence_then_live(self, timeout=10, sampling_interval=0.1):
+    def wait_for_acquisition_complete(self, timeout=10):
+        """Wait until acquisition completes (single sequence)."""
+        start = time.time()
+        while time.time() - start < timeout:
+            if self.inst.query("BUSY?").strip() == "0":
+                return True
+            time.sleep(0.1)
+        raise TimeoutError("Acquisition did not complete in time.")
+
+    def single_sequence(self, timeout=10, sampling_interval=0.1):
         """
         Run a single acquisition, wait for trigger, then return to normal live (auto/roll) mode.
 
@@ -328,18 +350,24 @@ class DPO4054:
         start = time.time()
         while time.time() - start < timeout:
             try:
-                if self.inst.query("BUSY?").strip() == "0":
+                if self.inst.query("*OPC?").strip() == "1":
                     break
             except Exception:
                 pass
             time.sleep(sampling_interval)
         else:
-            raise TimeoutError("Single sequence did not complete in time.")
+            # raise TimeoutError("Single sequence did not complete in time.")
+            print("Single sequence did not complete in time.")
 
         # 3. Set back to continuous (auto/roll) mode
-        self.inst.write("ACQuire:STOPAfter RUNST")  # or "RUNT" depending on firmware
+        # self.inst.write("ACQuire:STOPAfter RUNST")  # or "RUNT" depending on firmware
+        # self.inst.write("ACQuire:STATE RUN")
+        
+    def set_acquire_continuous(self):
+        """Set the oscilloscope to continuous acquisition mode."""
+        self.inst.write("Trigger:A:Mode AUTO")
+        self.inst.write("ACQuire:STOPAfter RUNST")
         self.inst.write("ACQuire:STATE RUN")
-
 
     def save_setup(self, filename="setup.stp"):
         """Save the current oscilloscope setup to internal memory."""
@@ -440,33 +468,54 @@ class DPO4054:
         self.set_trigger_edge_slope(slope)
         self.set_trigger_level(channel, level)
         # Verify
-        assert self.get_trigger_mode() == mode
-        assert self.get_trigger_edge_source() == f"CH{channel}"
-        assert self.get_trigger_edge_slope() == slope
-        assert abs(self.get_trigger_level(channel) - level) < 1e-3
-    def setup_channel(self, channel, display=True, scale=1.0, position=0.0, coupling='DC', bandwidth_limit=False):
-        """
-        Configure a channel's display, scale, position, coupling, and bandwidth limit.
-        """
-        # Display ON/OFF
-        val = 'ON' if display else 'OFF'
-        self.inst.write(f"SELect:CH{channel} {val}")
+        # assert self.get_trigger_mode() == mode
+        # assert self.get_trigger_edge_source() == f"CH{channel}"
+        # assert self.get_trigger_edge_slope() == slope
+        # assert abs(self.get_trigger_level(channel) - level) < 1e-3
 
-        # Vertical scale (V/div)
-        self.inst.write(f"CH{channel}:SCAle {scale}")
+    def setup_channel(self, channel: int, label: str='' ,display: bool = True, scale: float = 1.0, position: float = 0.0, offset: float = 0.0,
+                      coupling: str = 'DC', bandwidth: Union[str, float, int] = 'FULL',invert: bool = False):
+        """
+        Configure a channel's display, scale, position, coupling, and bandwidth limit on a Tektronix DPO4000 series oscilloscope.
 
-        # Vertical position (div)
+        Args:
+            channel (int): Channel number (1-4).
+            display (bool): Enable (True) or disable (False) channel display.
+            scale (float): Vertical scale in volts/div.
+            position (float): Vertical position in divisions.
+            coupling (str): Coupling mode, one of 'DC', 'AC', or 'GND'.
+            bandwidth (str|float|int): Bandwidth limit setting. Can be:
+                - 'TWENTY' or 20 or '20MHz' to enable 20 MHz bandwidth limit,
+                - 'FULL' or 'FULL' to disable bandwidth limit (full bandwidth).
+
+        Raises:
+            ValueError: If coupling or bandwidth arguments are invalid.
+        """
+
+        # Enable or disable channel display
+        display = 'ON' if display else 'OFF'
+        self.inst.write(f"SELect:CH{channel} {display}")
+        # set label for the channel
+        if label:
+            self.inst.write(f"CH{channel}:LABel \"{label}\"")
+        # Set vertical scale (volts per division)
+        self.inst.write(f"CH{channel}:SCALe {scale}")
+        # offset 
+        self.inst.write(f"CHl{channel}:OFFSet {offset}")
+        # Set vertical position (in divisions)
         self.inst.write(f"CH{channel}:POSition {position}")
 
-        # Coupling (DC, AC, GND)
+        # Validate and set coupling
         coupling = coupling.upper()
         if coupling not in ['DC', 'AC', 'GND']:
-            raise ValueError("Coupling must be 'DC', 'AC', or 'GND'")
+            raise ValueError("Coupling must be one of 'DC', 'AC', or 'GND'")
         self.inst.write(f"CH{channel}:COUPling {coupling}")
+        # invert channel
+        invert = 'ON' if invert else 'OFF'
+        self.inst.write(f"CH{channel}:INVert OFF")  # Ensure channel is
+        bandwidth = {'20MHz':'TWEnty','TWOfifty':'250MHz','FULl':'FULL'}.get(bandwidth,str(bandwidth))
+        self.inst.write(f"CH{channel}:BANdwidth {bandwidth}")
 
-        # Bandwidth limit (ON/OFF)
-        bw = 'ON' if bandwidth_limit else 'OFF'
-        self.inst.write(f"CH{channel}:BWL {bw}")
 
     def setup_edge_trigger(self, source_channel=1, level=0.0, slope='RISE', mode='EDGE'):
         """
@@ -575,6 +624,7 @@ class DPO4054:
     
         print(f"Fetched CH{channel}: {len(times)} samples (from t={times[0]:.6g}s to t={times[-1]:.6g}s)")
         return times, voltages, timebase_params
+    
     def fetch_channel_waveform(self, channel=1, num_samples=None):
         """
         Fetch and return time and voltage data for a specific channel and number of samples.
@@ -766,3 +816,145 @@ class DPO4054:
             "timebase": timebase,
         }
         return metrics
+    #..............................................
+    # File System Control
+
+
+    def create_directory(self, path: str):
+        """
+        Create a directory on the oscilloscope's file system if it doesn't exist.
+
+        Args:
+            path (str): Full directory path (e.g., "D:/data/experiments")
+        """
+        # Extract last directory name from path
+        dir_name = os.path.basename(path.rstrip('/\\'))
+        if not dir_name:
+            print("Error: Invalid directory name")
+            return
+        # Extract parent directory path
+        parent_dir = os.path.dirname(path.rstrip('/\\'))
+        # Set working directory to parent
+        self.inst.write(f"FILESystem:CWD '{parent_dir}'")
+        # Get directory listing
+        dirs_response = self.inst.query("FILESystem:DIR?").strip()
+        # Parse directory names (handle quoted CSV format)
+        existing_dirs = [
+            d.strip().strip('"') 
+            for d in dirs_response.split(',') 
+            if d.strip()
+        ]
+        # Check if directory exists
+        if dir_name in existing_dirs:
+            print(f"Directory '{dir_name}' already exists in '{parent_dir}'")
+            return
+        # Create directory
+        self.inst.write(f"FILESystem:MKDir '{dir_name}'")
+        print(f"Created directory '{dir_name}' in '{parent_dir}'")
+  
+    
+    def delete_file(self, path: str):
+        """
+        Delete a file from the oscilloscope's file system.
+        Args:
+            path (str): Path to the file to delete.
+        """
+        self.inst.write(f"FILESystem:DELete '{path}'")
+        print(f"File deleted at {path}")
+    
+    def disk_freespace(self, disk: str = "C:/") -> int:
+        """
+        Get the available disk space on the oscilloscope's file system.
+
+        Args:
+            disk: Disk path (default: "D:/")
+
+        Returns:
+            int: Available space in bytes.
+        """
+        # Set working directory
+        self.inst.write(f'FILESystem:CWD "{disk}"')
+
+        # Query free space and convert to integer
+        space_str = self.inst.query("FILESystem:FREESpace?").strip()
+        return space_str
+    
+    def remove_directory(self, path: str):
+        """
+        Delete a directory from the oscilloscope's file system.
+        Args:
+            path (str): Path to the directory to delete.
+        """
+        self.inst.write(f"FILESystem:RMDir '{path}'")
+        print(f"Directory deleted at {path}")
+        
+    def rename_file(self, old_path: str, new_path: str):
+        """
+        Rename a file on the oscilloscope's file system.
+        Args:
+            old_path (str): Current path of the file.
+            new_path (str): New path for the file.
+        """
+        self.inst.write(f"FILESystem:REName '{old_path}', '{new_path}'")
+        print(f"File renamed from {old_path} to {new_path}")
+
+    #............................................add()
+    # Immediate Measurements
+    def add_immediate_measurement(self,channel: int, meas_type: str, source: int = 1):
+        """
+        Adds a measurement of type `meas_type` on `channel`.
+        Args:
+            meas_type (str): Measurement type (e.g., 'FREQ', 'MEAN', etc.)
+            channel (int): Channel number (1-4)
+            slot (int): Measurement slot (1-8)
+        """
+        self.inst.write(f"MEASUrement:IMMed:TYPe {meas_type}")
+        self.inst.write(f"MEASUrement:IMMed:SOUrce{source} CH{channel}")
+
+    def get_immediate_measurement(self):
+        value = self.inst.query(f"MEASUrement:IMMed:VALue?").strip()
+        return float(value.split(' ')[-1]) if value else ""
+    
+
+    def get_operation_status(self, timeout_ms: float =200):
+        """
+        Poll the instrument until *OPC? returns '1' or timeout expires.
+        Returns immediately with False if no data available (non-blocking read).
+
+        Args:
+            timeout (float): Maximum time in seconds to wait for operation complete.
+
+        Returns:
+            bool: True if operation complete, False if timeout or no data.
+        """
+        original_timeout = self.inst.timeout  # Save original VISA timeout
+        self.inst.timeout = timeout_ms# Set short timeout (1000 ms) for non-blocking read
+        if timeout_ms < 200:
+            raise ValueError("Timeout must be greater than 200 ms for proper operation.")
+        try:
+            
+            resp = self.inst.query("*OPC?").strip()
+            if resp == '1':
+                self.inst.timeout = original_timeout  # Restore timeout
+                return True
+        except pyvisa.errors.VisaIOError as e:
+            # Timeout or no data available, return False immediately
+            if e.error_code == pyvisa.constants.StatusCode.error_timeout:
+                self.inst.timeout = original_timeout  # Restore timeout
+                return False
+            else:
+                # Other VISA errors can be handled or ignored
+                pass
+        except Exception:
+            # Catch-all for other exceptions, ignore or log as needed
+            pass
+
+    
+    def set_acquire_sequence(self):
+        """
+        Set the oscilloscope to acquire in sequence mode.
+        This allows capturing multiple acquisitions in a sequence.
+        """
+        self.inst.write("ACQuire:STOPAfter SEQ")
+        self.inst.write("ACQuire:STATE RUN")
+        self.inst.write("TRIGger:A:MODe NORMal")

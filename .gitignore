@@ -1,7 +1,36 @@
-
+# Python environment and virtual environment folders
 .env
-.venv
+.venv/
+env/
 env/
 venv/
+
+# Python cache files
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
 dist/
+build/
+*.egg-info/
+
+# IDE/editor specific files (optional but common)
+.vscode/
+.idea/
+*.swp
+
+# Logs and databases
+*.log
+*.sqlite3
+
+# Unit test / coverage reports
+.coverage
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+.coverage.*
+
+# Miscellaneous
+*.DS_Store

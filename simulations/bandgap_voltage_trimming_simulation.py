@@ -116,27 +116,9 @@ class HWL:
             self.ps.output_state(state=True,chan=1)
         return False,float(self.ps.measure_voltage_dc(chan=1))
     
-    def current_source(self,signal,reference,value):
-        # configure power supply channel 3 as voltage source 
-        if (self.ps.get_emoulation_mode(channel=3) != 'PS2Q') |  (self.ps.get_priority(channel=3) != 'CURR'):
-            self.ps.configure_current_sink_source(channel=3,current_setpoint=value)
-        # set voltage before turn on ......
-        self.ps.set_current(channel=3,current=value)
-        # check for the output On status if not turn on 
-        if not self.ps.get_outp_state(channel=3) :
-            self.ps.output_state(state=True,chan=3)
-        return False,float(self.ps.measure_voltage_dc(chan=3))
-    
     def generate_clock_callback(self,signal,reference,value):
         self.ps.arb_voltage_sine_generate(channel=1,frequency=value,repeat_count=10e3)
         return False,False
-    
-    def current_load(self,value):
-        self.ps.configure_CC_load(channel=1)
-        if not self.ps.get_outp_state(channel=1) :
-            self.ps.output_state(state=True,chan=1)
-        self.ps.set_current(channel=1,current=value)
-        return self.ps.measure_voltage_dc(chan=1)
 
 
 if __name__ == "__main__":
@@ -145,24 +127,59 @@ if __name__ == "__main__":
     g.hardware_callbacks = {
         'voltage_measure' : hwl.voltage_measure_callback,
         'voltage_force' : hwl.voltage_source,
-        'current_force' : hwl.current_source,
         'frequency_force' : hwl.generate_clock_callback,
         'voltage_trigger_lh' : hwl.voltage_trigger_LH_callback,
         'voltage_trigger_hl' : hwl.voltage_trigger_HL_callback,
         'frequency_measure' : hwl.frequency_measure_callback
     }
-    Test_Name = 'High_side_P_Ron'
-    # Wait for device stabilization
+    '''
+    Bring 1.2V bandgap reference voltage to IODATA1 through the analog test mux and trim it to the closest value to 1.2V
+    '''
+    Test_Name = 'BG_1p2V_Trim'
+    # Initial value 
+    percentage = 1e-2 # 1% deviation
 
-    I_forced= -0.5
+    typical_value = 1.2
+    low_value = typical_value - typical_value*percentage
+    high_value = typical_value + typical_value*percentage
 
-    # Step 3: Force 500mA current into OUTP pin
-    current = AFORCE(signal='OUTP', reference='PGND', value=I_forced, error_spread=0.05)  # 500mA ±5%
-    sleep(1)  # 1 µs
-    dv1 = hwl.current_load(value=I_forced) # simulate load ....
-    dV = VMEASURE(signal='PVDD', reference='OUTN', expected_value=0.062, error_spread=0.01) #pin 10
-    LSN_ron = abs(dV / I_forced) - 0.025 # R = V/I
-    print(f'Calculated highside P-Ron: {LSN_ron:.3f} Ohms')
-    print(f'[Expected ~100m Ohms typical, based on dV={dV:.3f}V @ {I_forced*1000:.0f}mA]')
-    hwl.ps.output_state(state=False,chan=3)
-    hwl.ps.output_state(state=False,chan=1)
+    buffer_offset = 10e-3 # 10mV
+    # Step size (LSB size)
+    step_size = 7.57e-3 # 7.57mV
+
+    # Number of steps width of the field / bits
+    num_steps = 2^4  # 4-bit
+
+    # Standard deviation for white noise
+    noise_std_dev = 0.025
+
+    # Initialize minimum error and optimal code
+    min_error = float('inf')
+    optimal_code = None
+    optimal_measured_value = None
+
+    for i in range(num_steps):
+        # sweep trimg code
+        # Generate monotonic values with step size
+        expected_value = low_value + i * step_size 
+        VFORCE(signal='IODATA1', reference='GND', value=expected_value) # use voltage source as bandgap to simulate the bandgap voltage 
+        # Add white noise to each value and subtracting the buffer offset
+        sleep(0.2) # 1s
+        measured_value = VMEASURE(signal='IODATA1', reference='GND', expected_value=expected_value,error_spread=noise_std_dev) - buffer_offset
+        error = abs(measured_value - typical_value)/abs(typical_value) *100
+        if error < min_error:
+            min_error = error
+            optimal_code = hex(i)
+            optimal_measured_value = measured_value
+    hwl.ps.output_state(False,chan=1)
+    # Check for limits
+    if low_value < optimal_measured_value < high_value:
+        print(f'............ {Test_Name} Passed ........')
+        # write the optimized code if the trim passed
+    else:
+        print(f'............ {Test_Name} Failed ........')
+        # if the trimh failed program default zero
+    print(f"Optimal Code: {optimal_code}")
+    print(f"Optimal measured value : {optimal_measured_value}V, Target value : {typical_value}V")
+
+    print(f"Minimum Error: {min_error}%")

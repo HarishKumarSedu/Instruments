@@ -73,6 +73,8 @@ class N67xx:
     # --- 3. Common Commands ---
     def clear_status(self):
         self.inst.write("*CLS")
+    def bus_trigger(self):
+        self.inst.write("*TRG")
     def set_event_status_enable(self, value):
         self.inst.write(f"*ESE {value}")
     def get_event_status_enable(self):
@@ -207,6 +209,65 @@ class N67xx:
         self.initiate_acquire(chan)
         self.initiate_elog(chan)
         self.initiate_transient(chan)
+    
+
+    # --- 8. arb commands  ---
+    def arb_voltage_sine_generate(self, channel=1, amplitude=1,frequency=100,
+                                  repeat_continuous=False, repeat_count: int = 100,
+                                  trigger_source='BUS', output_on=True):
+        """
+        Configure the Keysight N6705 to generate a sinusoidal arbitrary voltage waveform.
+
+        Parameters:
+        - channel: Power supply channel number (default 1)
+        - amplitude: Peak amplitude of sine wave in volts (default 1.0 V)
+        - offset: DC offset voltage (default 0.0 V)
+        - frequency: Frequency of sine wave in Hz (default 1000 Hz)
+        - repeat_continuous: Boolean, True for infinite repeats, False for finite repeats
+        - repeat_count: Number of repeats if repeat_continuous is False (default 1)
+        - trigger_source: Trigger source for ARB ('BUS', 'EXT', 'IMM', etc.) (default 'IMM')
+        - output_on: Boolean to enable output after configuration (default True)
+        """
+
+        ch_str = f"(@{channel})"
+        self.inst.write(f"*RST")
+        self.clear_status()
+        # Set voltage mode to ARB on specified channel (important to avoid FIXed mode error)
+        self.inst.write(f"VOLT:MODE ARB,{ch_str}")
+        self.inst.write(f"ARB:FUNC:TYPE VOLT,{ch_str}")
+        self.inst.write(f"ARB:FUNC:SHAP SIN,{ch_str}")
+
+        # Configure sine waveform parameters
+        self.inst.write(f"ARB:VOLT:SIN:AMPL {amplitude},{ch_str}")
+        self.inst.write(f"ARB:VOLT:SIN:OFFS {amplitude},{ch_str}")
+        self.inst.write(f"ARB:VOLT:SIN:FREQ {frequency},{ch_str}")
+
+        # Set ARB repeat count: 'INF' for continuous, or specific count
+        repeat_val = 'INF' if repeat_continuous else str(repeat_count)
+        self.inst.write(f"ARB:COUN {repeat_val},{ch_str}")
+
+        # Set ARB termination behavior: remain at last ARB value after completion
+        self.inst.write(f"ARB:TERM:LAST ON,{ch_str}")
+
+        # Set ARB trigger source (BUS, EXT, IMM, etc.)
+        self.inst.write(f"TRIG:ARB:SOUR BUS")
+
+        # Enable or disable output
+        self.inst.write(f"OUTP {'ON' if output_on else 'OFF'},{ch_str}")
+
+        # Initiate transient ARB sequence on the channel
+        self.inst.write(f"INIT:TRAN {ch_str}")
+
+        # If trigger source is immediate, send *TRG to start waveform immediately
+        # if trigger_source.upper() == 'IMM':
+        self.inst.write("*TRG")
+
+        # print(f"Sinusoidal ARB waveform started on channel {channel} with amplitude {amplitude} V, "
+        #       f"offset {amplitude} V, frequency {frequency} Hz, repeat_continuous={repeat_continuous}, "
+        #       f"repeat_count={repeat_count}, trigger source '{trigger_source}', output_on={output_on}.")
+
+        # # Optional: Check for errors after configuration
+        # print("System Error After Config:", self.system_error())
 
     # --- 8. OUTPut Commands ---
     def output_state(self, channel=1,state=True ):
@@ -383,7 +444,13 @@ class N67xx:
         self.inst.write(f'VOLT {str(voltage)},(@{str(channel)})')
     def set_current(self,channel:int,current: float=0.0):
         self.inst.write(f'CURR {str(current)},(@{str(channel)})')
-        
+    def get_emoulation_mode(self,channel:int):
+        return self.inst.query(f'EMUL? (@{str(channel)})').strip()
+    def get_priority(self,channel:int):
+        return self.inst.query(f'FUNC? (@{str(channel)})').strip()
+    def get_outp_state(self,channel:int):
+        state = self.inst.query(f'OUTP:STATE? (@{str(channel)})').strip()
+        return True if state == 'ON' else False
     def configure_voltage_source(self, channel,voltage_setpoint=0, voltage_limit=20, current_limit=3,
                                   current_protection_on=True,
                                  four_wire=False, output_HiZ=True,
@@ -423,6 +490,7 @@ class N67xx:
         self.inst.write(f'OUTPut:TMODe {output_mode_str},{ch_str}')
         # Set voltage slew rate
         self.inst.write(f'VOLT:SLEW {voltage_slew},{ch_str}')
+        
     def configure_current_sink_source(self, channel,current_setpoint=0, voltage_limit=6,four_wire=False):
         """
         Configure the voltage source on the specified channel.
@@ -454,6 +522,8 @@ class N67xx:
 
     def configure_volt_meter(self,channel:int):
         self.inst.write(f'EMULation VMETER,(@{str(channel)})')
+    def configure_CC_load(self,channel:int):
+        self.inst.write(f'EMULation CCLOAD,(@{str(channel)})')
     def configure_current_meter(self,channel:int):
         self.inst.write(f'EMULation AMETER,(@{str(channel)})')
 

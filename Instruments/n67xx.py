@@ -10,9 +10,10 @@ def _format_chanlist(chan):
         return f"(@{chan})"
     raise ValueError("Channel must be int or string.")
 
-class N67xxSCPI:
-    def __init__(self, inst):
-        self.inst = inst
+import pyvisa as visa
+class N67xx:
+    def __init__(self, inst_id:str=''):
+        self.inst = visa.ResourceManager().open_resource(inst_id)
 
     # --- 1. ABORt Commands ---
     def abort_acquire(self, chan=1):
@@ -140,7 +141,52 @@ class N67xxSCPI:
             "voltage_dc": self.fetch_voltage_dc(chan),
             "power_dc": self.fetch_power_dc(chan)
         }
+        
+    def measure_current_dc(self, chan=1):
+        return self.inst.query(f"MEASure:CURRent:DC? {_format_chanlist(chan)}").strip()
 
+    def measure_current_acdc(self, chan=1):
+        return self.inst.query(f"MEASure:CURRent:ACDC? {_format_chanlist(chan)}").strip()
+
+    def measure_current_high(self, chan=1):
+        return self.inst.query(f"MEASure:CURRent:HIGH? {_format_chanlist(chan)}").strip()
+
+    def measure_current_low(self, chan=1):
+        return self.inst.query(f"MEASure:CURRent:LOW? {_format_chanlist(chan)}").strip()
+
+    def measure_current_max(self, chan=1):
+        return self.inst.query(f"MEASure:CURRent:MAXimum? {_format_chanlist(chan)}").strip()
+
+    def measure_current_min(self, chan=1):
+        return self.inst.query(f"MEASure:CURRent:MINimum? {_format_chanlist(chan)}").strip()
+
+    def measure_power_dc(self, chan=1):
+        return self.inst.query(f"MEASure:POWer:DC? {_format_chanlist(chan)}").strip()
+
+    def measure_voltage_dc(self, chan=1):
+        return self.inst.query(f"MEASure:VOLTage:DC? {_format_chanlist(chan)}").strip()
+
+    def measure_voltage_acdc(self, chan=1):
+        return self.inst.query(f"MEASure:VOLTage:ACDC? {_format_chanlist(chan)}").strip()
+
+    def measure_voltage_high(self, chan=1):
+        return self.inst.query(f"MEASure:VOLTage:HIGH? {_format_chanlist(chan)}").strip()
+
+    def measure_voltage_low(self, chan=1):
+        return self.inst.query(f"MEASure:VOLTage:LOW? {_format_chanlist(chan)}").strip()
+
+    def measure_voltage_max(self, chan=1):
+        return self.inst.query(f"MEASure:VOLTage:MAXimum? {_format_chanlist(chan)}").strip()
+
+    def measure_voltage_min(self, chan=1):
+        return self.inst.query(f"MEASure:VOLTage:MINimum? {_format_chanlist(chan)}").strip()
+
+    def configure_measure(self, chan=1):
+        return {
+            "current_dc": self.measure_current_dc(chan),
+            "voltage_dc": self.measure_voltage_dc(chan),
+            "power_dc": self.measure_power_dc(chan)
+        }
     # --- 6. FORMAt Commands ---
     def set_format_data(self, fmt="ASCII"):
         self.inst.write(f"FORMat:DATA {fmt}")
@@ -163,9 +209,9 @@ class N67xxSCPI:
         self.initiate_transient(chan)
 
     # --- 8. OUTPut Commands ---
-    def output_state(self, state=True, chan=1):
+    def output_state(self, channel=1,state=True ):
         val = "ON" if state else "OFF"
-        self.inst.write(f"OUTPut:STATe {val}, {_format_chanlist(chan)}")
+        self.inst.write(f"OUTPut:STATe {val}, {_format_chanlist(channel)}")
     def output_couple_state(self, state=True):
         val = "ON" if state else "OFF"
         self.inst.write(f"OUTPut:COUPle:STATe {val}")
@@ -333,19 +379,83 @@ class N67xxSCPI:
 
     def source_voltage_slew(self, value=1.0, chan=1):
         self.inst.write(f"SOURce:VOLTage:SLEW:IMMediate {value}, {_format_chanlist(chan)}")
+    def set_voltage(self,channel:int,voltage: float=0.0):
+        self.inst.write(f'VOLT {str(voltage)},(@{str(channel)})')
+    def set_current(self,channel:int,current: float=0.0):
+        self.inst.write(f'CURR {str(current)},(@{str(channel)})')
+        
+    def configure_voltage_source(self, channel,voltage_setpoint=0, voltage_limit=20, current_limit=3,
+                                  current_protection_on=True,
+                                 four_wire=False, output_HiZ=True,
+                                 voltage_slew=3300):
+        """
+        Configure the voltage source on the specified channel.
+        Parameters:
+        - channel: int or str, output channel number (e.g., 3)
+        - voltage_limit: float, voltage limit in volts
+        - current_limit: float, current limit in amps
+        - voltage_setpoint: float, output voltage setpoint in volts (default 0)
+        - current_protection_on: bool, enable or disable current protection
+        - four_wire: bool, True for 4-wire (internal) sensing, False for 2-wire (external)
+        - output_HiZ: bool, True for HIGHZ output mode, False for LOWZ
+        - voltage_slew: float, slew rate in V/s
+        """
+        ch_str = f"(@{channel})"  # Wrap channel as string in SCPI format
+        # Map booleans to SCPI strings
+        voltage_sense_str = 'EXTernal' if four_wire else 'INTernal'
+        output_mode_str = 'HIGHZ' if output_HiZ else 'LOWZ'
+        # Set emulation mode (example: PS1Q)
+        self.inst.write(f'EMULation PS1Q,{ch_str}')
+        # Set function priority to voltage
+        self.inst.write(f'FUNC VOLT,{ch_str}')
+        # Set voltage limit
+        # self.inst.write(f'VOLT:LIM {voltage_limit},{ch_str}')
+        # Set current limit
+        self.inst.write(f'CURR:LIM {current_limit},{ch_str}')
+        # Set output voltage (default 0)
+        self.inst.write(f'VOLT {voltage_setpoint},{ch_str}')
+        # Enable or disable current protection
+        state = 'ON' if current_protection_on else 'OFF'
+        self.inst.write(f'CURRent:PROTection:STATe {state},{ch_str}')
+        # Set voltage sense source based on four_wire boolean
+        self.inst.write(f'VOLTage:SENSe:SOURce {voltage_sense_str},{ch_str}')
+        # Set output terminal mode based on output_HiZ boolean
+        self.inst.write(f'OUTPut:TMODe {output_mode_str},{ch_str}')
+        # Set voltage slew rate
+        self.inst.write(f'VOLT:SLEW {voltage_slew},{ch_str}')
+    def configure_current_sink_source(self, channel,current_setpoint=0, voltage_limit=6,four_wire=False):
+        """
+        Configure the voltage source on the specified channel.
+        Parameters:
+        - channel: int or str, output channel number (e.g., 3)
+        - voltage_limit: float, voltage limit in volts
+        - current_limit: float, current limit in amps
+        - voltage_setpoint: float, output voltage setpoint in volts (default 0)
+        - current_protection_on: bool, enable or disable current protection
+        - four_wire: bool, True for 4-wire (internal) sensing, False for 2-wire (external)
+        - output_HiZ: bool, True for HIGHZ output mode, False for LOWZ
+        - voltage_slew: float, slew rate in V/s
+        """
+        ch_str = f"(@{channel})"  # Wrap channel as string in SCPI format
+        # Map booleans to SCPI strings
+        voltage_sense_str = 'EXTernal' if four_wire else 'INTernal'
+        # Set emulation mode (example: PS1Q)
+        self.inst.write(f'EMULation PS2Q,{ch_str}')
+        # Set function priority to voltage
+        self.inst.write(f'FUNC CURR,{ch_str}')
+        # Set voltage limit
+        self.inst.write(f'VOLT:LIM {voltage_limit},{ch_str}')
+        # Set current limit
+        # self.inst.write(f'CURR:LIM {current_limit},{ch_str}')
+        # Set output current (default 0)
+        self.inst.write(f'CURR {current_setpoint},{ch_str}')
+        # Set voltage sense source based on four_wire boolean
+        self.inst.write(f'VOLTage:SENSe:SOURce {voltage_sense_str},{ch_str}')
 
-    def configure_source(self, chan=1):
-        self.source_current_immediate(1.0, chan)
-        self.source_current_limit_positive(1.0, chan)
-        self.source_current_limit_negative(0.0, chan)
-        self.source_voltage_immediate(5.0, chan)
-        self.source_voltage_limit_positive(5.0, chan)
-        self.source_voltage_limit_negative(0.0, chan)
-        self.source_voltage_bandwidth("LOW", chan)
-        self.source_current_mode("FIXed", chan)
-        self.source_voltage_mode("FIXed", chan)
-        self.source_current_protection_state(True, chan)
-        self.source_voltage_protection_level(6.0, chan)
+    def configure_volt_meter(self,channel:int):
+        self.inst.write(f'EMULation VMETER,(@{str(channel)})')
+    def configure_current_meter(self,channel:int):
+        self.inst.write(f'EMULation AMETER,(@{str(channel)})')
 
     # --- OUTPut Block ---
     def output_state(self, state=True, chan=1):

@@ -39,7 +39,7 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.GIT_TOKEN }}  # or use GITHUB_TOKEN if preferred
         run: |
-          python -m twine upload --repository-url https://upload.pkg.github.com/${{ github.repository_owner }} dist/*
+          python -m twine upload --repository-url https://api.github.com/orgs/${{ github.repository_owner }}/packages/pypi/upload dist/*
 
   verify-deployment:
     needs: build-and-publish

@@ -37,7 +37,7 @@ jobs:
         if: matrix.python-version == '3.9'  # Publish only once
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.GIT_TOKEN }}
         run: |
           python -m twine upload --repository-url https://upload.pkg.github.com/${{ github.repository_owner }}/${{ github.event.repository.name }} dist/*
 
@@ -47,6 +47,6 @@ jobs:
     steps:
       - name: Install package from GitHub Packages
         env:
-          PIP_EXTRA_INDEX_URL: https://__token__:${{ secrets.GITHUB_TOKEN }}@pypi.pkg.github.com/${{ github.repository_owner }}/simple/
+          PIP_EXTRA_INDEX_URL: https://__token__:${{ secrets.GIT_TOKEN }}@pypi.pkg.github.com/${{ github.repository_owner }}/simple/
         run: |
           pip install --upgrade IvmInstruments

@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ "3.9", "3.10", "3.11", "3.12"]
+        python-version: [ "3.9"]
 
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.GIT_TOKEN }}
         run: |
-          python -m twine upload --repository-url https://upload.pypi.github.com/HarishKumarSedu/Instruments dist/*
+         python -m twine upload --repository-url https://upload.pkg.github.com/HarishKumarSedu/Instruments dist/*
 
   verify-deployment:
     needs: build-and-deploy

@@ -39,7 +39,7 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.GIT_TOKEN }}
         run: |
-          python -m twine upload --repository-url https://upload.pypi.github.com/HarishKumarSedu/Instruments dist/*
+         python -m twine upload --repository-url https://upload.pkg.github.com/HarishKumarSedu/Instruments dist/*
 
   verify-deployment:
     needs: build-and-deploy

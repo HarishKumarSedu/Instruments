@@ -39,7 +39,7 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.GIT_TOKEN }}
         run: |
-         python -m twine upload --repository-url https://upload.pkg.github.com/HarishKumarSedu/Instruments dist/*
+         python -m twine upload --repository-url https://upload.pkg.github.com/HarishKumarSedu dist/*
 
   verify-deployment:
     needs: build-and-deploy
@@ -51,4 +51,4 @@ jobs:
           # Or configure pip to use GitHub Packages with a token
           GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
         run: |
-          pip install --upgrade --index-url https://pip.pkg.github.com/HarishKumarSedu/Instruments IvmInstruments
+          pip install --upgrade --index-url https://pip.pkg.github.com/HarishKumarSedu IvmInstruments

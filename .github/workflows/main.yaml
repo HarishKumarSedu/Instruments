@@ -43,7 +43,7 @@ jobs:
 
   verify-deployment:
     needs: build-and-deploy
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Install package from GitHub Packages
         env:

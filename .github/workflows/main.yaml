@@ -34,7 +34,7 @@ jobs:
         run: python -m twine check dist/*
 
       - name: Publish package to GitHub Packages
-        if: matrix.python-version == '3.8'  # Publish only once to avoid duplicates
+        if: matrix.python-version == '3.9'  # Publish only once to avoid duplicates
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.GIT_TOKEN }}

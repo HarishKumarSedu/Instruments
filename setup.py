@@ -11,7 +11,7 @@ setup(
     name=f'Ivm{REPO_NAME}',
     author=AUTHOR_USER_NAME,
     author_email=AUTHOR_EMAIL,
-    version='0.2.9',
+    version='0.3.0',
     description='A short description of the Instruments package',  # Provide a short description here
     long_description=long_description,
     long_description_content_type='text/markdown',  # Important for PyPI to render README.md correctly

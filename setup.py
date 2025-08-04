@@ -8,7 +8,7 @@ AUTHOR_EMAIL = 'harishkumarsedu@gmail.com'
 REPO_NAME = 'Instruments'
 
 setup(
-    name=f'Ivm{REPO_NAME}',
+    name=f'{REPO_NAME}',
     author=AUTHOR_USER_NAME,
     author_email=AUTHOR_EMAIL,
     version='0.3.0',

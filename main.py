@@ -1,6 +1,7 @@
 from Instruments.a34461 import A34461
 from Instruments.dpo4054 import DPO4054
 from Instruments.n67xx import N67xx
+from PyMCP2221A import PyMCP2221A
 from time import sleep 
 from dfttools import *
 from dfttools import g
@@ -8,24 +9,94 @@ import random
 import math 
 
 # meter = A34461('USB0::0x2A8D::0x1401::MY57200246::INSTR')
-class HWL:
 
+class HWL:
     def __init__(self):
-        self.meter = A34461('USB0::0x2A8D::0x1401::MY57200246::INSTR')
-        self.ps = N67xx('USB0::0x0957::0x0F07::MY50002157::INSTR')
-        self.scope = DPO4054('USB0::0x0699::0x0401::C020132::INSTR')
+        try:
+            self.mcp = PyMCP2221A.PyMCP2221A()
+            self.mcp.I2C_Init()
+            print("I2C bridge initialized")
+        except Exception as e:
+            print(f"I2C bridge init failed: {e}")
+            self.mcp = None
+        try:
+            from Instruments.a34461 import A34461
+            self.meter = A34461('USB0::0x2A8D::0x1401::MY57200246::INSTR')
+        except Exception:
+            print("Meter not found or connection failed")
+            self.meter = None
+
+        try:
+            from Instruments.n67xx import N67xx
+            self.ps = N67xx('USB0::0x0957::0x0F07::MY50002157::INSTR')
+        except Exception:
+            print("Power supply not found or connection failed")
+            self.ps = None
+
+        try:
+            from Instruments.dpo4054 import DPO4054
+            self.scope = DPO4054('USB0::0x0699::0x0401::C020132::INSTR')
+            # Example of scope setup if connected
+            self.scope.setup_channel(channel=4, label='uvlo', display=True, scale=1)
+            self.scope.set_channel_display(channel=1, display=False)
+            self.scope.set_acquire_continuous()
+        except Exception:
+            print("Scope not found or connection failed")
+            self.scope = None
         '''
             # setup digital sope for comparator detect 
             
         '''
 
-        # Configure channel 4:
-        # Label as 'uvlo', enable display, 1 V/div scale, 0 position, 0 offset,
-        # DC coupling, full bandwidth, no inversion
-        self.scope.setup_channel(channel=4,label='uvlo',display=True,scale=1,position=0.0,offset=0.0,coupling='DC',bandwidth='FULL',invert=False)
-        self.scope.set_channel_display(channel=1, display=False)
-        # Set timebase scale to half the input signal frequency (1M Hz)
-        self.scope.set_acquire_continuous()
+    # -------------------
+    # I2C Callback Functions
+    
+    def i2c_reg_write(self, device_address: int, register_address: int, value: int) -> bool:
+        """Write a value to an I2C register using the MCP bridge."""
+        if self.mcp is None:
+            print("I2C bridge not available")
+            return False
+        try:
+            # Compose data to write: register address + value
+            data = bytearray([register_address, value & 0xFF])
+            self.mcp.I2C_Write(device_address, data)
+            print(f"[i2c_reg_write] Wrote 0x{value:X} to dev 0x{device_address:X}, reg 0x{register_address:X}")
+            return True
+        except Exception as e:
+            print(f"I2C reg write error: {e}")
+            return False
+
+    def i2c_reg_read(self, device_address: int, register_address: int, No_bytes: int = 1) -> int:
+        """Read a value from an I2C register using the MCP bridge."""
+        if self.mcp is None:
+            print("I2C bridge not available")
+            return 0
+        try:
+            # Write register address first
+            self.mcp.I2C_Write(device_address, bytearray([register_address]))
+            # Then read bytes from that register
+            read_data = self.mcp.I2C_Read(device_address, No_bytes)
+            if len(read_data) > 0:
+                value = read_data[0]
+                print(f"[i2c_reg_read] Read 0x{value:X} from dev 0x{device_address:X}, reg 0x{register_address:X}")
+                return value
+            else:
+                print("I2C read returned empty data")
+                return 0
+        except Exception as e:
+            print(f"I2C reg read error: {e}")
+            return 0
+
+    def i2c_bit_write(self, device_address: int, register_address: int, msb: int, lsb: int, value: int) -> bool:
+        """Write bits to an I2C register using the MCP bridge."""
+        # This example assumes full byte write; bit masking can be added if needed.
+        return self.i2c_reg_write(device_address, register_address, value)
+
+    def i2c_bit_read(self, device_address: int, register_address: int, msb: int, lsb: int, expected_value: int = None):
+        """Read bits from an I2C register using the MCP bridge."""
+        # This example just reads the full register value.
+        return self.i2c_reg_read(device_address, register_address, No_bytes=1)
+
     
     def voltage_trigger_LH_callback(self,signal,reference,threshold,measure_value):
         # Setup trigger on channel 4
